@@ -21,10 +21,26 @@
  /**
   * @brief Constructor - Instantiates SFE_CC3000_Client object
   */
-SFE_CC3000_Client::SFE_CC3000_Client(SFE_CC3000 &cc3000)
+SFE_CC3000_Client::SFE_CC3000_Client(SFE_CC3000 &cc3000, int32_t socket)
 {
     cc3000_ = &cc3000;
+    socket_ = socket;
+}
+
+
+SFE_CC3000_Client::SFE_CC3000_Client()
+{
+    cc3000_ = NULL;
     socket_ = -1;
+}
+
+SFE_CC3000_Client::SFE_CC3000_Client(const SFE_CC3000_Client& client)
+{
+    cc3000_ = client.cc3000_;
+    socket_ = client.socket_;
+    if (socket_ >= 0) {
+    	g_socket_connected = true;
+    }
 }
 
 /**
@@ -48,9 +64,10 @@ int SFE_CC3000_Client::connect(    const char *hostname,
     IPAddress remote_ip;
 
     /* If CC3000 is not connected to a network, return false. */
-    if (    !cc3000_->getInitStatus() || 
+    if (    cc3000_ == NULL ||
+    		!cc3000_->getInitStatus() || 
             !cc3000_->getConnectionStatus() || 
-            !cc3000_->getDHCPStatus() ) {
+            !cc3000_->getDHCPStatus()) {
         return false;
     }
     
@@ -77,7 +94,8 @@ int SFE_CC3000_Client::connect(    IPAddress ip_address,
     int i;
                                     
     /* If CC3000 is not connected to a network, return false. */
-    if (    !cc3000_->getInitStatus() || 
+    if (    cc3000_ == NULL ||
+    		!cc3000_->getInitStatus() || 
             !cc3000_->getConnectionStatus() || 
             !cc3000_->getDHCPStatus() ) {
         return false;
@@ -138,6 +156,7 @@ size_t SFE_CC3000_Client::write(const uint8_t *buf, size_t size)
 {
     /* If socket does not have a connection, return 0 */
     if (!connected()) {
+    	Serial.println("write disconnected.");
         return 0;
     }
     
@@ -158,7 +177,8 @@ int SFE_CC3000_Client::connectUDP(    const char *hostname,
     IPAddress remote_ip;
 
     /* If CC3000 is not connected to a network, return false. */
-    if (    !cc3000_->getInitStatus() || 
+    if (    cc3000_ == NULL ||
+    		!cc3000_->getInitStatus() || 
             !cc3000_->getConnectionStatus() || 
             !cc3000_->getDHCPStatus() ) {
         return false;
@@ -189,7 +209,8 @@ int SFE_CC3000_Client::connectUDP(    IPAddress ip_address,
     int i;
                                     
     /* If CC3000 is not connected to a network, return false. */
-    if (    !cc3000_->getInitStatus() || 
+    if (    cc3000_ == NULL ||
+    		!cc3000_->getInitStatus() || 
             !cc3000_->getConnectionStatus() || 
             !cc3000_->getDHCPStatus() ) {
         return false;
@@ -246,7 +267,7 @@ int SFE_CC3000_Client::available()
     timeout.tv_usec = 5000;
     
     /* Call select() to see if there is any data waiting */
-    int ret = select(socket_ + 1, &readsds, NULL, NULL, &timeout);
+    int ret = select(socket_ + 1, NULL, &readsds, NULL, &timeout);
     
     /* If select() returned anything greater than 0, there's data for us */
     if (ret > 0) {
@@ -351,8 +372,8 @@ void SFE_CC3000_Client::stop(){
 
 SFE_CC3000_Client::operator bool()
 {
-  return (cc3000_->getInitStatus() || 
+  return (  cc3000_ != NULL && (
+  			cc3000_->getInitStatus() || 
             cc3000_->getConnectionStatus() || 
-            cc3000_->getDHCPStatus());
+            cc3000_->getDHCPStatus()));
 }
-    

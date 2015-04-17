@@ -26,7 +26,9 @@
 /* CC3000 Client class */
 class SFE_CC3000_Client : public Client {
 public:
-    SFE_CC3000_Client(SFE_CC3000 &cc3000);
+    SFE_CC3000_Client(SFE_CC3000 &cc3000, int32_t socket=-1);
+    SFE_CC3000_Client(const SFE_CC3000_Client& client);
+    SFE_CC3000_Client();
     ~SFE_CC3000_Client();
 
     int connect(   const char *hostname, 
